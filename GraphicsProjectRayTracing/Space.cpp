@@ -32,7 +32,7 @@ photon photon::emitPhoton(int cx, int cy, int cz, int num, int aimx, int aimy)
     else
     {
         ans.pos[0] = -500 + aimx;
-        ans.pos[1] = 500 - aimy;
+        ans.pos[1] = 500 - aimy; 
         ans.pos[2] = 500;
     }
 

@@ -205,7 +205,7 @@ void moveTo(photon &pho, int index)
 int Russia(photon &pho, int index)
 {
     //int cho = -1;
-    //if (rand() % 100 == 0) return -1;
+    if (rand() % 100 == 0) return -1;
     return 1;
 }
 
@@ -286,13 +286,13 @@ uchar* rayTracing(int it, int jt, int cx, int cy, int cz)
         {
             double depth = INFINITY;
             int index = -1;
-            for (int i = 0; i < num; ++i)
+            for (int it = 0; it < num; ++it)
             {
-                double curDep = intersec(trace, i);
+                double curDep = intersec(trace, it);
                 if (curDep < depth)
                 {
                     depth = curDep;
-                    index = i;
+                    index = it;
                 }
             }
             if (index == -1 || strength(trace) < HOLD) { trace.p[0] = 0, trace.p[1] = 0, trace.p[2] = 0; break; }
