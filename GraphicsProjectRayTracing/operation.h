@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cmath>
 #include <cstdio>
+#include <random>
+#include <iostream>
 
 #define BRDF_SAMPLING_RES_THETA_H       90
 #define BRDF_SAMPLING_RES_THETA_D       90
@@ -12,6 +14,15 @@
 #define GREEN_SCALE (1.15/1500.0)
 #define BLUE_SCALE (1.66/1500.0)
 #define M_PI	3.1415926535897932384626433832795
+
+
+static std::uniform_real_distribution<double> mdisz(0, 1);
+static std::uniform_real_distribution<double> mdisx(-1, 1);
+static std::uniform_real_distribution<double> mdisy(-1, 1);
+static std::default_random_engine mgenerator;
+
+
+
 
 
 // cross product of two vectors
@@ -48,14 +59,14 @@ inline void refresh(photon &pho, double normal[3], double bi_normal[3])
 
 
 // norm of a vector
-inline double norm(double* v)
+inline double norm(const double v[3])
 {
     double len = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     return len;
 }
 
 
-inline void normalize(double* v)
+inline void normalize(double v[3])
 {
     // normalize
     double len = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -71,12 +82,42 @@ inline void plus(double* v, const double* v1)
     v[2] = v[2] + v1[2];
 }
 
+inline void minus(double* v, const double* v1)
+{
+    v[0] = v[0] - v1[0];
+    v[1] = v[1] - v1[1];
+    v[2] = v[2] - v1[2];
+}
+
+inline void setValue(double v[3], const double v1[3])
+{
+    v[0] = v1[0];
+    v[1] = v1[1];
+    v[2] = v1[2];
+}
+
 inline void neg(double* v)
 {
     v[0] = - v[0];
     v[1] = - v[1];
     v[2] = - v[2];
 }
+
+inline void randomHalfSphere(double& theta, double& phi, double pos[3])
+{
+    do
+    {
+        pos[0] = mdisx(mgenerator);
+        pos[1] = mdisy(mgenerator);
+        pos[2] = mdisz(mgenerator);
+    } while (norm(pos) > 1);
+    normalize(pos);
+    theta = acos(abs(pos[2]));
+    phi = atan2(pos[0], pos[1]);
+}
+
+
+
 
 // rotate vector along one axis
 inline void rotate_vector(double* vector, double* axis, double angle, double* out)
@@ -235,9 +276,10 @@ inline void lookup_brdf_val(double* brdf, double theta_in, double fi_in,
     blue_val = brdf[ind + BRDF_SAMPLING_RES_THETA_H*BRDF_SAMPLING_RES_THETA_D*BRDF_SAMPLING_RES_PHI_D] * BLUE_SCALE;
 
 
-    if (red_val < 0.0 || green_val < 0.0 || blue_val < 0.0)
+    if (red_val < 0.0 || green_val < 0.0 || blue_val < 0.0) {
+        std::cout << theta_in << " " << theta_out << std::endl;
         fprintf(stderr, "Below horizon.\n");
-
+    }
 }
 
 // Read BRDF data

@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClInclude Include="kdtree.h" />
     <ClInclude Include="operation.h" />
+    <ClInclude Include="proces.h" />
     <ClInclude Include="Space.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
