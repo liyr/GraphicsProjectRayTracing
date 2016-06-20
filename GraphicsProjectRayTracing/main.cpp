@@ -8,24 +8,31 @@
 #include "Ray.h"
 #include "Sphere.h"
 #include <functional>
+#include "operation.h"
 #define M_PI	3.1415926535897932384626433832795
 
 using namespace cv;
 
 double truncate(double x) { return x<0 ? 0 : x>1 ? 1 : x; }
 int toInt(double x) { return int(pow(truncate(x), 1 / 2.2) * 255 + .5); }
+double *brdf_m;
 
 bool intersect(const Ray &r, double &t, int &id, const std::vector<Sphere>& spheres){
-  double d, inf=INFINITY;
+    double d;
+    t=INFINITY;
   for(auto it = spheres.begin(); it != spheres.end(); ++it) 
-      if((d = it->intersect(r))&&d<t){t=d;id=it - spheres.begin();}
+      if((d = it->intersect(r))&& d < t)
+      { 
+        t=d;
+        id=it - spheres.begin();
+      }
   return t<INFINITY;
 }
 
-void getBiNormal(MyVector w, MyVector& u, MyVector& v)
+MyVector getBiNormal(MyVector w)
 {
-    u = ((fabs(w.x) > .1 ? MyVector(0, 1) : MyVector(1)) % w).normalize();
-    v = w%u;
+    auto u = ((fabs(w.x) > .1 ? MyVector(0, 1) : MyVector(1)) % w).normalize();
+    return u;
 }
 
 void sphereDiffusion(MyVector nl, double r1, double r2, MyVector& d)
@@ -34,7 +41,8 @@ void sphereDiffusion(MyVector nl, double r1, double r2, MyVector& d)
     MyVector w = nl;
     MyVector u;
     MyVector v;
-    getBiNormal(w, u, v);
+    u = getBiNormal(w);
+    v = w % u;
     d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1 - r2)).normalize();
 }
 
@@ -43,7 +51,8 @@ void wardDiffusion(MyVector in, MyVector nl, double r1, double r2, MyVector& d)
     MyVector w = nl;
     MyVector u;
     MyVector v;
-    getBiNormal(w, u, v);
+    u = getBiNormal(w);
+    v = w % u;
     double alpha_y = 0.1, alpha_x = 0.1;
     double phi = atan(alpha_y / alpha_x * tan(2 * M_PI * r2));
     double theta = atan(sqrt(-log(r1) / (cos(phi) * cos(phi) / alpha_x / alpha_x
@@ -52,10 +61,23 @@ void wardDiffusion(MyVector in, MyVector nl, double r1, double r2, MyVector& d)
     d = in - d * 2 * (d | in);
 }
 
+void brdf(const Ray& r, MyVector nl, MyVector& f, MyVector d)
+{
+    double theta_out, phi_out, theta_in, phi_in;
+    r.dir.calSphereRepre(nl, getBiNormal(nl), theta_out, phi_out);
+    d.calSphereRepre(nl, getBiNormal(nl), theta_in, phi_in);
+    MyVector tmp;
+    lookup_brdf_val(brdf_m, theta_in, phi_in, theta_out, phi_out, tmp.x, tmp.y, tmp.z);
+    f = f * tmp * 10;
+}
+
 MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, const std::function<double (void)>& ran) {
     double t;                               // distance to intersection
     int id = 0;                               // id of intersected object
     if (!intersect(r, t, id, spheres)) return MyVector(); // if miss, return black
+    //for (int i = 0; i < depth; ++i)
+    //    std::cout << " ";
+    //std::cout << id << std::endl;
     const Object &obj = spheres[id];        // the hit object
     MyVector x = r.RayPos + r.dir*t, n = obj.getNormal(x), nl = (n |(r.dir))<0 ? n : n*-1, f = obj.getColor(x);
     double p = max(max(f.x, f.y), f.z); // max refl
@@ -71,6 +93,10 @@ MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, c
         return obj.getEmission(x) + f * (radiance(Ray(x, d), depth, spheres, ran));
         break;
     case BRDF:
+        r1 = 2 * M_PI*ran(), r2 = ran();
+        sphereDiffusion(nl, r1, r2, d);
+        brdf(r, nl, f, d);
+        return obj.getEmission(x) + f * (radiance(Ray(x, d), depth, spheres, ran));
         break;
     case WARD:
         r1 = ran(), r2 = ran();
@@ -110,7 +136,7 @@ int main(int argc, char *argv[])
     int w = 1024, h = 768, samps = 100; // # samples
     Ray cam(MyVector(50, 52, 295.6), MyVector(0, -0.042612, -1).normalize()); // cam pos, dir
     MyVector cx = MyVector(w*.5135 / h), cy = (cx%cam.dir).normalize()*.5135, r, *c = new MyVector[w*h];
-
+    read_brdf("./model/delrin.binary", brdf_m);
 
 #pragma omp parallel for schedule(dynamic, 1) private(r)       // OpenMP
     for (int y = 0; y<h; y++) {                       // Loop over image rows
@@ -121,8 +147,8 @@ int main(int argc, char *argv[])
             Sphere(1e5, MyVector(50,40.8,-1e5 + 170), MyVector(),MyVector(),           DIFF),//Frnt
             Sphere(1e5, MyVector(50, 1e5, 81.6),    MyVector(),MyVector(.75,.75,.75),WOOD),//Botm
             Sphere(1e5, MyVector(50,-1e5 + 81.6,81.6),MyVector(),MyVector(.75,.75,.75),DIFF),//Top
-            Sphere(16.5,MyVector(27,16.5,47),       MyVector(),MyVector(1,1,1)*.999, SPEC),//Mirr
-            Sphere(16.5,MyVector(73,16.5,78),       MyVector(),MyVector(1,1,1)*.999, REFR),//Glas
+            Sphere(16.5,MyVector(27,30,47),       MyVector(),MyVector(1,1,1)*.999, SPEC),//Mirr
+            Sphere(16.5,MyVector(73,35,78),       MyVector(),MyVector(1,1,1)*.999, REFR),//Glas
             Sphere(600, MyVector(50,681.6 - .27,81.6),MyVector(12,12,12),  MyVector(), DIFF) //Lite
         };
         std::uniform_real_distribution<double> dis(0, 1);
@@ -142,7 +168,7 @@ int main(int argc, char *argv[])
                     c[i] = c[i] + MyVector(truncate(r.x), truncate(r.y), truncate(r.z))*.25;
                 }
     }
-    std::cout << clock() - begin << std::endl;
+    std::cout << std::endl << clock() - begin << std::endl;
 
 
     Mat img(h, w, CV_8UC3, cv::Scalar(0,0,0));

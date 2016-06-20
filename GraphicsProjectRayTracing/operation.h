@@ -47,16 +47,6 @@ inline double mix_product(double* v0, double* v1, double* v2)
     return dot_product(v0, out);
 }
 
-inline void refresh(photon &pho, double normal[3], double bi_normal[3])
-{
-    double comoving[3];
-    comoving[2] = dot_product(pho.dir, normal);
-    comoving[1] = dot_product(pho.dir, bi_normal);
-    comoving[0] = mix_product(pho.dir, normal, bi_normal);
-    pho.theta = acos(comoving[2]);
-    pho.phi = atan2(comoving[0], comoving[1]);
-}
-
 
 // norm of a vector
 inline double norm(const double v[3])
