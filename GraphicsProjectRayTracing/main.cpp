@@ -9,6 +9,7 @@
 #include "Sphere.h"
 #include <functional>
 #include "operation.h"
+#include "Photon.h"
 #define M_PI	3.1415926535897932384626433832795
 
 using namespace cv;
@@ -75,9 +76,6 @@ MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, c
     double t;                               // distance to intersection
     int id = 0;                               // id of intersected object
     if (!intersect(r, t, id, spheres)) return MyVector(); // if miss, return black
-    //for (int i = 0; i < depth; ++i)
-    //    std::cout << " ";
-    //std::cout << id << std::endl;
     const Object &obj = spheres[id];        // the hit object
     MyVector x = r.RayPos + r.dir*t, n = obj.getNormal(x), nl = (n |(r.dir))<0 ? n : n*-1, f = obj.getColor(x);
     double p = max(max(f.x, f.y), f.z); // max refl
@@ -116,8 +114,10 @@ MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, c
         Ray reflRay(x, r.dir - n * 2 * (n | (r.dir)));     // Ideal dielectric REFRACTION
         bool into = (n | nl) > 0;                // Ray from outside going in?
         double nc = 1, nt = 1.5, nnt = into ? nc / nt : nt / nc, ddn = r.dir | (nl), cos2t;
-        if ((cos2t = 1 - nnt*nnt*(1 - ddn*ddn))<0)    // Total internal reflection
+        if ((cos2t = 1 - nnt*nnt*(1 - ddn*ddn)) < 0)    // Total internal reflection
             return obj.getEmission(x) + f * (radiance(reflRay, depth, spheres, ran));
+
+
         MyVector tdir = (r.dir * nnt - n*((into ? 1 : -1)*(ddn*nnt + sqrt(cos2t)))).normalize();
         double a = nt - nc, b = nt + nc, R0 = a*a / (b*b), c = 1 - (into ? -ddn : tdir | (n));
         double Re = R0 + (1 - R0)*c*c*c*c*c, Tr = 1 - Re, P = .25 + .5*Re, RP = Re / P, TP = Tr / (1 - P);
@@ -128,12 +128,43 @@ MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, c
     }
 }
 
+Photon randomPhoton(const std::function<double(void)>& ran)
+{
+    double x, z;
+    do
+    {
+        x = ran();
+        z = ran();
+    } while ((x - 0.5) * (x - 0.5) + (z - 0.5) * (z - 0.5) > 0.25) ;
+    double r1 = 2 * M_PI * ran(), r2 = ran();
+    MyVector dir;
+    sphereDiffusion(MyVector(0, -1, 0), r1, r2, dir);
+    Photon res(MyVector(36 * (x - 0.5) + 50, 81.6, 36 * (z - 0.5) + 81.6), dir, MyVector(1., 1., 1.));
+    return res;
+}
+
+void emitPhotons(const std::vector<Sphere>& spheres, const std::function<double(void)>& ran)
+{
+    const int num = 10;
+    for (int i = 0; i < num; ++i)
+    {
+        Photon r = randomPhoton(ran);
+        double t;
+        int id = 0;                               // id of intersected object
+        if (!intersect(r, t, id, spheres)) return; // if miss, return black
+        const Object &obj = spheres[id];        // the hit object
+        MyVector x = r.RayPos + r.dir*t, n = obj.getNormal(x), nl = (n | (r.dir)) < 0 ? n : n*-1, f = obj.getColor(x);
+        double p = max(max(f.x, f.y), f.z); // max refl
+        //if (++depth>5) if (ran()<p) f = f*(1 / p); else return; //R.R.
+        
+    }
+}
 
 
 int main(int argc, char *argv[])
 {
     auto begin = clock();
-    int w = 1024, h = 768, samps = 100; // # samples
+    int w = 1024, h = 768, samps = 2000; // # samples
     Ray cam(MyVector(50, 52, 295.6), MyVector(0, -0.042612, -1).normalize()); // cam pos, dir
     MyVector cx = MyVector(w*.5135 / h), cy = (cx%cam.dir).normalize()*.5135, r, *c = new MyVector[w*h];
     read_brdf("./model/delrin.binary", brdf_m);
@@ -141,8 +172,8 @@ int main(int argc, char *argv[])
 #pragma omp parallel for schedule(dynamic, 1) private(r)       // OpenMP
     for (int y = 0; y<h; y++) {                       // Loop over image rows
         std::vector<Sphere> spheres = {//Scene: radius, position, emission, color, material
-            Sphere(1e5, MyVector(1e5 + 1,40.8,81.6), MyVector(),MyVector(.75,.25,.25),DIFF),//Left
-            Sphere(1e5, MyVector(-1e5 + 99,40.8,81.6),MyVector(),MyVector(.25,.25,.75),WARD),//Rght
+            Sphere(1e5, MyVector(1e5 + 1,40.8,81.6), MyVector(),MyVector(.95,.05,.05),DIFF),//Left
+            Sphere(1e5, MyVector(-1e5 + 99,40.8,81.6),MyVector(),MyVector(.05,.05,.95),WARD),//Rght
             Sphere(1e5, MyVector(50,40.8, 1e5),     MyVector(),MyVector(.75,.75,.75),BUMP),//Back
             Sphere(1e5, MyVector(50,40.8,-1e5 + 170), MyVector(),MyVector(),           DIFF),//Frnt
             Sphere(1e5, MyVector(50, 1e5, 81.6),    MyVector(),MyVector(.75,.75,.75),WOOD),//Botm

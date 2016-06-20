@@ -5,8 +5,8 @@ class Photon :
     public Ray
 {
 public:
-
-    Photon(MyVector o_, MyVector d_): Ray(o_, d_)
+    MyVector color;
+    Photon(MyVector o_, MyVector d_, MyVector c_): Ray(o_, d_), color(c_)
     {
     }
 
