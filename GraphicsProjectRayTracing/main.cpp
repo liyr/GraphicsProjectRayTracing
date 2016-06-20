@@ -68,7 +68,7 @@ void brdf(const Ray& r, MyVector nl, MyVector& f, MyVector d)
     r.dir.calSphereRepre(nl, getBiNormal(nl), theta_out, phi_out);
     d.calSphereRepre(nl, getBiNormal(nl), theta_in, phi_in);
     MyVector tmp;
-    lookup_brdf_val(brdf_m, theta_in, phi_in, theta_out, phi_out, tmp.x, tmp.y, tmp.z);
+    lookup_brdf_val(brdf_m, theta_in, phi_in, M_PI - theta_out, phi_out, tmp.x, tmp.y, tmp.z);
     f = f * tmp * 10;
 }
 
@@ -164,7 +164,7 @@ void emitPhotons(const std::vector<Sphere>& spheres, const std::function<double(
 int main(int argc, char *argv[])
 {
     auto begin = clock();
-    int w = 1024, h = 768, samps = 2000; // # samples
+    int w = 1024, h = 768, samps = 8000; // # samples
     Ray cam(MyVector(50, 52, 295.6), MyVector(0, -0.042612, -1).normalize()); // cam pos, dir
     MyVector cx = MyVector(w*.5135 / h), cy = (cx%cam.dir).normalize()*.5135, r, *c = new MyVector[w*h];
     read_brdf("./model/delrin.binary", brdf_m);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
         std::vector<Sphere> spheres = {//Scene: radius, position, emission, color, material
             Sphere(1e5, MyVector(1e5 + 1,40.8,81.6), MyVector(),MyVector(.95,.05,.05),DIFF),//Left
             Sphere(1e5, MyVector(-1e5 + 99,40.8,81.6),MyVector(),MyVector(.05,.05,.95),WARD),//Rght
-            Sphere(1e5, MyVector(50,40.8, 1e5),     MyVector(),MyVector(.75,.75,.75),BUMP),//Back
+            Sphere(1e5, MyVector(50,40.8, 1e5),     MyVector(),MyVector(.75,.75,.75),BRDF),//Back
             Sphere(1e5, MyVector(50,40.8,-1e5 + 170), MyVector(),MyVector(),           DIFF),//Frnt
             Sphere(1e5, MyVector(50, 1e5, 81.6),    MyVector(),MyVector(.75,.75,.75),WOOD),//Botm
             Sphere(1e5, MyVector(50,-1e5 + 81.6,81.6),MyVector(),MyVector(.75,.75,.75),DIFF),//Top
@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
         }
     }
 
-	imwrite(".\\answer1.png", img);
+	imwrite(".\\answer2.png", img);
 
     system("pause");
 	return 0;

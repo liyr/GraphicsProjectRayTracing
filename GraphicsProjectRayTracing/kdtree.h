@@ -1,10 +1,12 @@
 #pragma once
 #include <vector>
+#include <queue>
 #include "Photon.h"
 #include <algorithm>
 #include <core/cvdef.h>
 int dim = 0;
-int cmp(const Photon &a, const Photon &b)
+MyVector pos;
+int cmpa(const Photon &a, const Photon &b)
 {
     switch(dim)
     {
@@ -21,6 +23,7 @@ int cmp(const Photon &a, const Photon &b)
 }
 
 
+
 class kdtree
 {
 public:
@@ -34,19 +37,31 @@ public:
         end = ed;
         dim = dimen;
         if (dim == 3) dim = 0;
-        std::sort(phoarr->begin() + root, phoarr->begin() + end, cmp);
+        std::sort(phoarr->begin() + root, phoarr->begin() + end, cmpa);
         if (end - root <= 2) return;
         auto tmp = (*phoarr)[root];
         (*phoarr)[root] = (*phoarr)[root + (end - root) / 2];
         (*phoarr)[root + (end - root) / 2] = tmp;
-        std::sort(phoarr->begin() + root + 1, phoarr->begin() + end, cmp);
+        std::sort(phoarr->begin() + root + 1, phoarr->begin() + end, cmpa);
         index = root + (end - root) / 2 + 1;
         lchild = new kdtree(phoarr, root + 1, index - 1, dimen + 1);
         rchild = new kdtree(phoarr, index, ed, dimen + 1);
     }
-    uchar* knn(int, int, double, double, double)
+    struct cmp {
+        bool operator()(Photon a, Photon b) const
+        {
+            return (a.RayPos - pos).norm() > (b.RayPos - pos).norm();
+        }
+    };
+    MyVector knn(const MyVector pos_)
     {
-        
+        pos = pos_;
+        std::priority_queue< Photon, std::vector<Photon>, cmp> pq;
+
+
+
+        MyVector res;
+        return res;
     }
     ~kdtree()
     {
