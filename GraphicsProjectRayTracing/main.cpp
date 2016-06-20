@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
         std::default_random_engine gen;
         auto ran = [&] {return dis(gen); };
         fprintf(stderr, "\rRendering (%d spp) %5.2f%%", samps * 4, 100.*y / (h - 1));
-        for (int x = 0; x<w; x++)   // Loop cols
+        for (int x = 0; x < w; x++)   // Loop cols
             for (int sy = 0, i = (h - y - 1)*w + x; sy<2; sy++)     // 2x2 subpixel rows
                 for (int sx = 0; sx<2; sx++, r = MyVector()) {        // 2x2 subpixel cols
                     for (int s = 0; s<samps; s++) {
