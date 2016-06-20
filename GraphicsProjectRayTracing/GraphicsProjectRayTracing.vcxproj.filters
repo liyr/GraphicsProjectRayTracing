@@ -38,5 +38,26 @@
     <ClInclude Include="proces.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Photon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Ray.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Rectan.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3d.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

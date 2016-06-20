@@ -124,9 +124,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kdtree.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="operation.h" />
+    <ClInclude Include="Photon.h" />
     <ClInclude Include="proces.h" />
+    <ClInclude Include="Ray.h" />
+    <ClInclude Include="Rectan.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="Space.h" />
+    <ClInclude Include="Sphere.h" />
+    <ClInclude Include="Vector3d.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
