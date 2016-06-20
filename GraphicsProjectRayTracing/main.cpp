@@ -58,7 +58,7 @@ MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, c
     if (!intersect(r, t, id, spheres)) return MyVector(); // if miss, return black
     const Object &obj = spheres[id];        // the hit object
     MyVector x = r.RayPos + r.dir*t, n = obj.getNormal(x), nl = (n |(r.dir))<0 ? n : n*-1, f = obj.getColor(x);
-    double p = max(f.x, f.y, f.z); // max refl
+    double p = max(max(f.x, f.y), f.z); // max refl
     if (++depth>5) if (ran()<p) f = f*(1 / p); else return obj.getEmission(x); //R.R.
     double r1, r2, r3;
     MyVector d;
@@ -116,10 +116,10 @@ int main(int argc, char *argv[])
     for (int y = 0; y<h; y++) {                       // Loop over image rows
         std::vector<Sphere> spheres = {//Scene: radius, position, emission, color, material
             Sphere(1e5, MyVector(1e5 + 1,40.8,81.6), MyVector(),MyVector(.75,.25,.25),DIFF),//Left
-            Sphere(1e5, MyVector(-1e5 + 99,40.8,81.6),MyVector(),MyVector(.25,.25,.75),DIFF),//Rght
-            Sphere(1e5, MyVector(50,40.8, 1e5),     MyVector(),MyVector(.75,.75,.75),DIFF),//Back
+            Sphere(1e5, MyVector(-1e5 + 99,40.8,81.6),MyVector(),MyVector(.25,.25,.75),WARD),//Rght
+            Sphere(1e5, MyVector(50,40.8, 1e5),     MyVector(),MyVector(.75,.75,.75),BUMP),//Back
             Sphere(1e5, MyVector(50,40.8,-1e5 + 170), MyVector(),MyVector(),           DIFF),//Frnt
-            Sphere(1e5, MyVector(50, 1e5, 81.6),    MyVector(),MyVector(.75,.75,.75),DIFF),//Botm
+            Sphere(1e5, MyVector(50, 1e5, 81.6),    MyVector(),MyVector(.75,.75,.75),WOOD),//Botm
             Sphere(1e5, MyVector(50,-1e5 + 81.6,81.6),MyVector(),MyVector(.75,.75,.75),DIFF),//Top
             Sphere(16.5,MyVector(27,16.5,47),       MyVector(),MyVector(1,1,1)*.999, SPEC),//Mirr
             Sphere(16.5,MyVector(73,16.5,78),       MyVector(),MyVector(1,1,1)*.999, REFR),//Glas
