@@ -10,7 +10,8 @@ enum Refl_t
     WARD,
     WOOD,
     BUMP,
-    BRDF
+    BRDF,
+    PHONG
 };
 
 
