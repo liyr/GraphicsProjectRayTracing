@@ -128,7 +128,7 @@ MyVector radiance(const Ray &r, int depth, const std::vector<Sphere>& spheres, c
     }
 }
 
-Photon randomPhoton(const std::function<double(void)>& ran)
+Photon randomPhoton(const std::vector<Sphere>& spheres, const std::function<double(void)>& ran)
 {
     double x, z;
     do
@@ -143,19 +143,24 @@ Photon randomPhoton(const std::function<double(void)>& ran)
     return res;
 }
 
+void PhotonTrace(const std::vector<Sphere>& spheres, const std::function<double(void)>& ran)
+{
+    Photon r = randomPhoton(spheres, ran);
+    double t;
+    int id = 0;                               // id of intersected object
+    if (!intersect(r, t, id, spheres)) return; // if miss, return black
+    const Object &obj = spheres[id];        // the hit object
+    MyVector x = r.RayPos + r.dir*t, n = obj.getNormal(x), nl = (n | (r.dir)) < 0 ? n : n*-1, f = obj.getColor(x);
+    double p = max(max(f.x, f.y), f.z); // max refl
+    if (++depth>5) if (ran()<p) f = f*(1 / p); else return; //R.R.
+}
+
 void emitPhotons(const std::vector<Sphere>& spheres, const std::function<double(void)>& ran)
 {
     const int num = 10;
     for (int i = 0; i < num; ++i)
     {
-        Photon r = randomPhoton(ran);
-        double t;
-        int id = 0;                               // id of intersected object
-        if (!intersect(r, t, id, spheres)) return; // if miss, return black
-        const Object &obj = spheres[id];        // the hit object
-        MyVector x = r.RayPos + r.dir*t, n = obj.getNormal(x), nl = (n | (r.dir)) < 0 ? n : n*-1, f = obj.getColor(x);
-        double p = max(max(f.x, f.y), f.z); // max refl
-        //if (++depth>5) if (ran()<p) f = f*(1 / p); else return; //R.R.
+        PhotonTrace(spheres, ran);
         
     }
 }
@@ -164,15 +169,15 @@ void emitPhotons(const std::vector<Sphere>& spheres, const std::function<double(
 int main(int argc, char *argv[])
 {
     auto begin = clock();
-    int w = 1024, h = 768, samps = 8000; // # samples
+    int w = 1024, h = 768, samps = 2000; // # samples
     Ray cam(MyVector(50, 52, 295.6), MyVector(0, -0.042612, -1).normalize()); // cam pos, dir
     MyVector cx = MyVector(w*.5135 / h), cy = (cx%cam.dir).normalize()*.5135, r, *c = new MyVector[w*h];
-    read_brdf("./model/delrin.binary", brdf_m);
+    read_brdf("./model/hematite.binary", brdf_m);
 
 #pragma omp parallel for schedule(dynamic, 1) private(r)       // OpenMP
     for (int y = 0; y<h; y++) {                       // Loop over image rows
         std::vector<Sphere> spheres = {//Scene: radius, position, emission, color, material
-            Sphere(1e5, MyVector(1e5 + 1,40.8,81.6), MyVector(),MyVector(.95,.05,.05),DIFF),//Left
+            Sphere(1e5, MyVector(1e5 + 1,40.8,81.6), MyVector(),MyVector(.95,.05,.05),BRDF),//Left
             Sphere(1e5, MyVector(-1e5 + 99,40.8,81.6),MyVector(),MyVector(.05,.05,.95),WARD),//Rght
             Sphere(1e5, MyVector(50,40.8, 1e5),     MyVector(),MyVector(.75,.75,.75),BRDF),//Back
             Sphere(1e5, MyVector(50,40.8,-1e5 + 170), MyVector(),MyVector(),           DIFF),//Frnt
@@ -219,7 +224,7 @@ int main(int argc, char *argv[])
         }
     }
 
-	imwrite(".\\answer2.png", img);
+	imwrite(".\\answer3.png", img);
 
     system("pause");
 	return 0;
