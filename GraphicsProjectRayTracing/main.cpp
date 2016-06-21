@@ -229,7 +229,7 @@ int main(int argc, char* argv[])
     int w = 1024, h = 768, samps = 2000; // # samples
     Ray cam(MyVector(50, 52, 295.6), MyVector(0, -0.042612, -1).normalize()); // cam pos, dir
     MyVector cx = MyVector(w * .5135 / h), cy = (cx % cam.dir).normalize() * .5135, r, *c = new MyVector[w * h];
-    read_brdf("./model/hematite.binary", brdf_m);
+    read_brdf("./model/chrome.binary", brdf_m);
 
 #pragma omp parallel for schedule(dynamic, 1) private(r) // OpenMP
 
@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    imwrite(".\\answer3.png", img);
+    imwrite(".\\answer4.png", img);
 
     system("pause");
     return 0;

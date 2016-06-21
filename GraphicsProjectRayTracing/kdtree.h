@@ -50,7 +50,15 @@ public:
     struct cmp {
         bool operator()(Photon a, Photon b) const
         {
-            return (a.RayPos - pos).norm() > (b.RayPos - pos).norm();
+            switch(dim)
+            {
+            case 0:
+                return abs((a.RayPos - pos).x) > abs((b.RayPos - pos).x);
+            case 1:
+                return abs((a.RayPos - pos).y) > abs((b.RayPos - pos).y);
+            case 2:
+                return abs((a.RayPos - pos).z) > abs((b.RayPos - pos).z);
+            }
         }
     };
     MyVector knn(const MyVector pos_)
@@ -58,9 +66,32 @@ public:
         pos = pos_;
         std::priority_queue< Photon, std::vector<Photon>, cmp> pq;
 
+        while(end - root >= 2)
+        {
+            switch(dimen)
+            {
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                break;
+            }
+            if((*phoarr)[root].RayPos.x > pos_.x)
+            {
+                
+            }
+        }
 
 
         MyVector res;
+        const int k = 10;
+        for (int i = 0; i < k; i++)
+        {
+            res = res + pq.top().color;
+            pq.pop();
+        }
+        res = res * (1);
         return res;
     }
     ~kdtree()
