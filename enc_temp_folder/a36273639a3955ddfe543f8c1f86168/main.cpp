@@ -79,7 +79,7 @@ void brdf(const Ray& r, MyVector nl, MyVector& f, MyVector d)
     d.calSphereRepre(nl, getBiNormal(nl), theta_in, phi_in);
     MyVector tmp;
     lookup_brdf_val(brdf_m, theta_in, phi_in, M_PI - theta_out, phi_out, tmp.x, tmp.y, tmp.z);
-    f = f * tmp * 30;
+    f = f * tmp * 20;
 }
 
 void phong(const Ray ray, MyVector nl, MyVector &color, MyVector d)
@@ -176,7 +176,6 @@ void PhotonTrace(int depth, const std::vector<Sphere>& spheres, const std::funct
     if (!intersect(r, t, id, spheres)) return; // if miss, return black
     const Object& obj = spheres[id]; // the hit object
     MyVector x = r.RayPos + r.dir * t, n = obj.getNormal(x), nl = (n | (r.dir)) < 0 ? n : n * -1, f = obj.getColor(x);
-    if (depth == 0) r.dir = (r.dir + MyVector(ran() / 20, ran() / 20, ran() / 20)).normalize();
     double p = max(max(f.x, f.y), f.z); // max refl
     if (++depth > 5) if (ran() < p) f = f * (1 / p); else return; //R.R.
     double r1, r2, r3;
@@ -204,7 +203,7 @@ void PhotonTrace(int depth, const std::vector<Sphere>& spheres, const std::funct
         r1 = 2 * M_PI * ran() , r2 = ran();
         sphereDiffusion(nl, r1, r2, d);
         obj.getEmission(x) + f * (ran() > 0.65 ?
-            (radiance(Ray(x, d), depth, spheres, ran)) : 
+                                             (radiance(Ray(x, d), depth, spheres, ran)) : 
             (radiance(Ray(x, r.dir - n * 2 * (n | (r.dir))), depth, spheres, ran)));
         break;
     case SPEC:
@@ -278,11 +277,7 @@ int main(int argc, char* argv[])
                         double r2 = 2 * dis(gen), dy = r2 < 1 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);
                         MyVector d = cx * (((sx + .5 + dx) / 2 + x) / w - .5) +
                             cy * (((sy + .5 + dy) / 2 + y) / h - .5) + cam.dir;
-                        auto pos = cam.RayPos + d * 140;
-                        //d.normalize();
-                        //MyVector disturb(dis(gen)/10, dis(gen)/10, dis(gen)/10);
-                        //r = r + radiance(Ray(pos, (d + disturb).normalize()), 0, spheres, ran) * (1. / samps);
-                        r = r + radiance(Ray(pos, d.normalize()), 0, spheres, ran) * (1. / samps);
+                        r = r + radiance(Ray(cam.RayPos + d * 140, d.normalize()), 0, spheres, ran) * (1. / samps);
                     } // Camera rays are pushed ^^^^^ forward to start in interior
                     c[i] = c[i] + MyVector(truncate(r.x), truncate(r.y), truncate(r.z)) * .25;
                 }
@@ -307,7 +302,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    imwrite(".\\answer7.png", img);
+    imwrite(".\\answer6.png", img);
 
     system("pause");
     return 0;
