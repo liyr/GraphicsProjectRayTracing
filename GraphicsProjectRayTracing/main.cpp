@@ -79,13 +79,13 @@ void brdf(const Ray& r, MyVector nl, MyVector& f, MyVector d)
     d.calSphereRepre(nl, getBiNormal(nl), theta_in, phi_in);
     MyVector tmp;
     lookup_brdf_val(brdf_m, theta_in, phi_in, M_PI - theta_out, phi_out, tmp.x, tmp.y, tmp.z);
-    f = f * tmp * 30;
+    f = f * tmp * 40;
 }
 
 void phong(const Ray ray, MyVector nl, MyVector &color, MyVector d)
 {
-    double kd = 1, ks = 0.7;
-    color = color * (kd * (ray.dir | nl) + ks * pow((d | ray.dir),512));
+    double kd = 10, ks = 0.7;
+    color = color * (kd * -(ray.dir | nl) + ks * pow((d | ray.dir),16));
 }
 
 MyVector radiance(const Ray& r, int depth, const std::vector<Sphere>& spheres, const std::function<double (void)>& ran)
@@ -219,9 +219,10 @@ void PhotonTrace(int depth, const std::vector<Sphere>& spheres, const std::funct
 
 
         MyVector tdir = (r.dir * nnt - n * ((into ? 1 : -1) * (ddn * nnt + sqrt(cos2t)))).normalize();
-        double a = nt - nc, b = nt + nc, R0 = a * a / (b * b), c = 1 - (into ? -ddn : tdir | (n));
+        double a = nt - nc, b = nt + nc;
+        double R0 = a * a / (b * b), c = 1 - (into ? -ddn : tdir | (n));
         double Re = R0 + (1 - R0) * c * c * c * c * c, Tr = 1 - Re, P = .25 + .5 * Re, RP = Re / P, TP = Tr / (1 - P);
-        obj.getEmission(x) + f * (depth > 2 ? (ran() < P ? // Russian roulette
+        obj.getEmission(x) + f * 0.8 * (depth > 2 ? (ran() < P ? // Russian roulette
         radiance(reflRay, depth, spheres, ran) * RP : radiance(Ray(x, tdir), depth, spheres, ran) * TP) :
         radiance(reflRay, depth, spheres, ran) * Re + radiance(Ray(x, tdir), depth, spheres, ran) * Tr);
         break;
@@ -248,7 +249,7 @@ int main(int argc, char* argv[])
     const std::vector<Sphere> spheres = {//Scene: radius, position, emission, color, material
         Sphere(1e5, MyVector(1e5 + 1, 40.8, 81.6), MyVector(), MyVector(.95, .05, .05), BRDF),//Left
         Sphere(1e5, MyVector(-1e5 + 99, 40.8, 81.6), MyVector(), MyVector(.05, .05, .95), WARD),//Rght
-        Sphere(1e5, MyVector(50, 40.8, 1e5), MyVector(), MyVector(.05, .05, .85), PHONG),//Back
+        Sphere(1e5, MyVector(50, 40.8, 1e5), MyVector(), MyVector(.05, .85, .05), PHONG),//Back
         Sphere(1e5, MyVector(50, 40.8, -1e5 + 170), MyVector(), MyVector(), DIFF),//Frnt
         Sphere(1e5, MyVector(50, 1e5, 81.6), MyVector(), MyVector(.75, .75, .75), WOOD),//Botm
         Sphere(1e5, MyVector(50, -1e5 + 81.6, 81.6), MyVector(), MyVector(.75, .75, .75), DIFF),//Top
